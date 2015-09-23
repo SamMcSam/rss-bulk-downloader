@@ -80,5 +80,7 @@ Makefile*
 *.qmlproject.user
 *.qmlproject.user.*
 
-# executable
+# =========================
 /bin
+/lib
+/include

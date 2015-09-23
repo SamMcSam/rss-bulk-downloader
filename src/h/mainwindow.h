@@ -1,7 +1,14 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QtWidgets>
 #include <QMainWindow>
+#include <QMessageBox>
+#include <QTreeWidget>
+#include <QXmlStreamReader>
+#include <QtNetwork>
+#include <QList>
+
 #include <QDebug>
 
 namespace Ui {
@@ -18,7 +25,6 @@ public:
 
 public slots :
     void reset();
-    void quit();
     void howTo();
     void about();
     void download();
