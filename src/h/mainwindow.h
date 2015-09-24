@@ -7,6 +7,8 @@
 #include <QTreeWidget>
 #include <QXmlStreamReader>
 #include <QtNetwork>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
 #include <QList>
 
 #include <QDebug>
@@ -27,8 +29,9 @@ public slots :
     void reset();
     void howTo();
     void about();
-    void download();
     void choosePath();
+    void download();
+    void crawl(QNetworkReply *reply);
 
 private:
     Ui::MainWindow *ui;

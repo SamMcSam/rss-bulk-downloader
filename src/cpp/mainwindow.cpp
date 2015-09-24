@@ -1,6 +1,12 @@
 #include "../h/mainwindow.h"
 #include "ui_mainwindow.h"
 
+//@TODO test if empty dir, empty rss...
+
+/**
+ * @brief MainWindow::MainWindow
+ * @param parent
+ */
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -18,11 +24,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     reset();
 }
 
+/**
+ * @brief MainWindow::~MainWindow
+ */
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
+/**
+ * @brief MainWindow::reset
+ */
 void MainWindow::reset()
 {
     ui->rssEdit->setText("");
@@ -30,6 +42,9 @@ void MainWindow::reset()
     ui->dirEdit->setText("C:/");
 }
 
+/**
+ * @brief MainWindow::howTo
+ */
 void MainWindow::howTo()
 {
     QMessageBox::information(this, tr("How to use"),
@@ -42,6 +57,9 @@ void MainWindow::howTo()
     );
 }
 
+/**
+ * @brief MainWindow::about
+ */
 void MainWindow::about()
 {
     QMessageBox::about(this, tr("About"),
@@ -51,6 +69,9 @@ void MainWindow::about()
     );
 }
 
+/**
+ * @brief MainWindow::choosePath
+ */
 void MainWindow::choosePath()
 {
     QString dir = QFileDialog::getExistingDirectory(this, tr("Choose path to save downloads"),
@@ -61,30 +82,35 @@ void MainWindow::choosePath()
     ui->dirEdit->setText(dir);
 }
 
+/**
+ * @brief MainWindow::download
+ */
 void MainWindow::download()
 {
-    qDebug() << "Download was pressed";
+    QString rssURL = ui->rssEdit->displayText();
 
-    qDebug() << this->ui->dirEdit->text();
+    QNetworkAccessManager *manager = new QNetworkAccessManager();
+    QNetworkRequest request;
+    request.setUrl(QUrl(rssURL));
+    QNetworkReply *reply = manager->get(request);
 
+    connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(crawl(QNetworkReply*)));
+
+    ui->result->setText(tr("Connecting..."));
+}
+
+/**
+ * @brief MainWindow::crawl
+ * @param reply
+ */
+void MainWindow::crawl(QNetworkReply *reply)
+{
     /*
      * channel
      * - item
      * -- enclosure url="..."
     */
+    qDebug() << reply->readAll();
 
-    // copy QString to char*
-    QString rssURL = ui->rssEdit->text();
-
-
-    QUrl url(ui->rssEdit->text());
-
-
-
-/*
-    ui->result->setText(tr("Where do you want to save?"));
-    ui->result->setText(tr("Downloading files..."));
-    ui->result->setText(tr("Downloading files (0 of 10)..."));
-    ui->result->setText(tr("Done! (Downloaded 0 of 10 files)"));
-    */
+    ui->result->setText(tr("Data received! Start crawler..."));
 }
