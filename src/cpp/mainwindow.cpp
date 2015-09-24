@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     //button
     connect(ui->downloadButton, SIGNAL(clicked()), this, SLOT(download()));
+    connect(ui->dirButton, SIGNAL(clicked()), this, SLOT(choosePath()));
 
     reset();
 }
@@ -26,14 +27,15 @@ void MainWindow::reset()
 {
     ui->rssEdit->setText("");
     ui->result->setText(tr("Enter the RSS feed URL in the text field"));
+    ui->dirEdit->setText("C:/");
 }
 
 void MainWindow::howTo()
 {
-    QMessageBox::about(this, tr("How to use"),
+    QMessageBox::information(this, tr("How to use"),
         tr("<ol>"
-        "<li>Copy/paste the rss feed url in the text field</li>"
-        "<li>Press download button, choose where to save</li>"
+        "<li>Copy/paste the rss feed url in the text field, choose where to save</li>"
+        "<li>Press download button</li>"
         "<li>Wait for it to finish downloading</li>"
         "<li>Enjoy :)</li>"
         "</ol>")
@@ -45,22 +47,25 @@ void MainWindow::about()
     QMessageBox::about(this, tr("About"),
         tr("<h3>RSS Bulk Downloader</h3>"
         "<p>By Sam (2015)</p>"
-        "<p>Made in C++ with QtCreator for the UI biznatch</p>"
-        "<p>and libcurl library for the internet stuff</p>")
+        "<p>Made in C++ with QtCreator for the UI and network biznatch</p>")
     );
+}
+
+void MainWindow::choosePath()
+{
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Choose path to save downloads"),
+        "/home",
+        QFileDialog::ShowDirsOnly
+        | QFileDialog::DontResolveSymlinks);
+
+    ui->dirEdit->setText(dir);
 }
 
 void MainWindow::download()
 {
     qDebug() << "Download was pressed";
 
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Choose path to save downloads"),
-        "/home",
-        QFileDialog::ShowDirsOnly
-        | QFileDialog::DontResolveSymlinks);
-
-
-    qDebug() << dir;
+    qDebug() << this->ui->dirEdit->text();
 
     /*
      * channel

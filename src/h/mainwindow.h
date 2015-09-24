@@ -28,6 +28,7 @@ public slots :
     void howTo();
     void about();
     void download();
+    void choosePath();
 
 private:
     Ui::MainWindow *ui;
