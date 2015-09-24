@@ -7,4 +7,3 @@ Because the Earwolf network of podcasts have decided to hide all old episodes be
 ## Copyright
 
 * made with Qt creator
-* wiht libcurl library
