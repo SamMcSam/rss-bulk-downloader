@@ -42,6 +42,8 @@ void MainWindow::reset()
     ui->dirEdit->setText("C:/");
 
     nbrEpisodes = 0;
+    nbrEpisodesDownloaded = 0;
+    mp3s.clear();
 }
 
 /**
@@ -107,24 +109,79 @@ void MainWindow::download()
  */
 void MainWindow::crawl(QNetworkReply *reply)
 {
-    QDomDocument dom;
-    dom.setContent(reply->readAll());
+    if (reply->NoError == 0) {
 
-    //get items
-    QDomNodeList items = dom.elementsByTagName("item");
-    nbrEpisodes = items.size();
+        ui->result->setText(tr("Data received! Start crawler..."));
 
-    //get all mp3s urls
-    QDomNodeList enclosures = dom.elementsByTagName("enclosure");
-    QDomElement enclosure;
-    std::list<QString> mp3s;
+        QDomDocument dom;
+        dom.setContent(reply->readAll());
 
-    for (int i=0; i<enclosures.size(); i++) {
-        enclosure = enclosures.item(i).toElement();
-        mp3s.push_front(enclosure.attribute("url"));
-        qDebug() << enclosure.attribute("url");
+        //get items
+        QDomNodeList items = dom.elementsByTagName("item");
+        nbrEpisodes = items.size();
+
+        //get all mp3s urls
+        QDomNodeList enclosures = dom.elementsByTagName("enclosure");
+        QDomElement enclosure;
+
+        for (int i=0; i<enclosures.size(); i++) {
+            enclosure = enclosures.item(i).toElement();
+            mp3s.append(enclosure.attribute("url"));
+            qDebug() << enclosure.attribute("url");
+        }
+        qDebug() << mp3s.size();
+
+        downloadNext();
     }
+    else {
+        ui->result->setText(tr("Connection error"));
+    }
+}
+
+/**
+ * @brief MainWindow::downloadFiles
+ * @param reply
+ */
+void MainWindow::downloadFiles(QNetworkReply *reply)
+{
     qDebug() << mp3s.size();
 
-    ui->result->setText(tr("Data received! Start crawler..."));
+    //do hte download
+
+    nbrEpisodesDownloaded++;
+    mp3s.pop_front();
+
+    if (mp3s.size() > 0) {
+        downloadNext();
+    }
+    else {
+        ui->result->setText(
+            QString("Done! (downloaded ") +
+            QString::number(nbrEpisodes) +
+            QString(" files out of ") +
+            QString::number(nbrEpisodes) +
+            QString(")")
+        );
+    }
+}
+
+void MainWindow::downloadNext()
+{
+    qDebug() << mp3s.front();
+
+    //prepare network
+    QNetworkAccessManager *manager = new QNetworkAccessManager();
+    QNetworkRequest request;
+    request.setUrl(QUrl(mp3s.front()));
+    manager->get(request);
+
+    connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(downloadFiles(QNetworkReply*)));
+
+    ui->result->setText(
+        QString("Downloading file... (") +
+        QString::number(nbrEpisodes - mp3s.size() + 1) +
+        QString("/") +
+        QString::number(nbrEpisodes) +
+        QString(")")
+    );
 }

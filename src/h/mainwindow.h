@@ -8,7 +8,7 @@
 #include <QtNetwork>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
-#include <QList>
+#include <QStringList>
 #include <QDomDocument>
 
 #include <QDebug>
@@ -32,10 +32,14 @@ public slots :
     void choosePath();
     void download();
     void crawl(QNetworkReply *reply);
+    void downloadFiles(QNetworkReply *reply);
+    void downloadNext();
 
 private:
     Ui::MainWindow *ui;
     int nbrEpisodes;
+    int nbrEpisodesDownloaded;
+    QStringList mp3s;
 };
 
 #endif // MAINWINDOW_H
