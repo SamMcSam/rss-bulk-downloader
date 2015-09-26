@@ -32,7 +32,7 @@ public slots :
     void choosePath();
     void download();
     void crawl(QNetworkReply *reply);
-    void downloadFiles(QNetworkReply *reply);
+    void saveFile();
     void downloadNext();
 
 private:
@@ -40,6 +40,8 @@ private:
     int nbrEpisodes;
     int nbrEpisodesDownloaded;
     QStringList mp3s;
+    QString m_directory;
+    QNetworkReply *m_mp3file;
 };
 
 #endif // MAINWINDOW_H

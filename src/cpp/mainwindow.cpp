@@ -1,8 +1,6 @@
 #include "../h/mainwindow.h"
 #include "ui_mainwindow.h"
 
-//@TODO test if empty dir, empty rss...
-
 /**
  * @brief MainWindow::MainWindow
  * @param parent
@@ -44,6 +42,8 @@ void MainWindow::reset()
     nbrEpisodes = 0;
     nbrEpisodesDownloaded = 0;
     mp3s.clear();
+
+    //m_mp3file->reset();
 }
 
 /**
@@ -92,13 +92,26 @@ void MainWindow::choosePath()
 void MainWindow::download()
 {
     QString rssURL = ui->rssEdit->displayText();
+    QUrl rssFeed = QUrl(rssURL);
+
+    if (!rssFeed.isValid()) {
+        ui->result->setText(tr("Enter valid URL!"));
+        return;
+    }
+
+    m_directory = ui->dirEdit->displayText() + "/";
+    if (!QDir(m_directory).exists()) {
+        ui->result->setText(tr("Enter valid directory!"));
+        return;
+    }
 
     QNetworkAccessManager *manager = new QNetworkAccessManager();
     QNetworkRequest request;
-    request.setUrl(QUrl(rssURL));
+    request.setUrl(rssFeed);
     manager->get(request);
 
     connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(crawl(QNetworkReply*)));
+    //connect(manager, SIGNAL(error(QNetworkReply*)), this, SLOT(f(QNetworkReply*))); //@TODO
 
     ui->result->setText(tr("Connecting..."));
 }
@@ -120,6 +133,11 @@ void MainWindow::crawl(QNetworkReply *reply)
         QDomNodeList items = dom.elementsByTagName("item");
         nbrEpisodes = items.size();
 
+        if (nbrEpisodes < 1) {
+            ui->result->setText(tr("Couldn't fetch episodes. Not an rss feed?"));
+            return;
+        }
+
         //get all mp3s urls
         QDomNodeList enclosures = dom.elementsByTagName("enclosure");
         QDomElement enclosure;
@@ -129,7 +147,15 @@ void MainWindow::crawl(QNetworkReply *reply)
             mp3s.append(enclosure.attribute("url"));
             qDebug() << enclosure.attribute("url");
         }
-        qDebug() << mp3s.size();
+
+        if (mp3s.size() < 1) {
+            ui->result->setText(tr("No episode files found."));
+            return;
+        }
+
+        //cleanup
+        reply->close();
+        reply->deleteLater();
 
         downloadNext();
     }
@@ -139,16 +165,35 @@ void MainWindow::crawl(QNetworkReply *reply)
 }
 
 /**
- * @brief MainWindow::downloadFiles
+ * @brief MainWindow::saveFile
  * @param reply
  */
-void MainWindow::downloadFiles(QNetworkReply *reply)
+void MainWindow::saveFile()
 {
-    qDebug() << mp3s.size();
+    //TEST FUCKING REDIRECTIONS!!!!!!!
 
-    //do hte download
 
-    nbrEpisodesDownloaded++;
+    if (m_mp3file->NoError == 0) {
+        qDebug() << "SAVING FILE...";
+
+        //treat name file
+        QString fileName = mp3s.front().split('/').last();
+
+        qDebug() << fileName;
+        qDebug() << (m_directory + fileName);
+
+        //do the download
+        QFile file(m_directory + fileName);
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(m_mp3file->readAll());
+            file.close();
+            nbrEpisodesDownloaded++;
+        }
+    }
+    else {
+        qDebug() << m_mp3file->errorString();
+    }
+
     mp3s.pop_front();
 
     if (mp3s.size() > 0) {
@@ -163,8 +208,15 @@ void MainWindow::downloadFiles(QNetworkReply *reply)
             QString(")")
         );
     }
+
+    m_mp3file->close();
+    m_mp3file->deleteLater();
+    m_mp3file->reset();
 }
 
+/**
+ * @brief MainWindow::downloadNext
+ */
 void MainWindow::downloadNext()
 {
     qDebug() << mp3s.front();
@@ -173,9 +225,13 @@ void MainWindow::downloadNext()
     QNetworkAccessManager *manager = new QNetworkAccessManager();
     QNetworkRequest request;
     request.setUrl(QUrl(mp3s.front()));
-    manager->get(request);
+    m_mp3file = manager->get(request);
 
-    connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(downloadFiles(QNetworkReply*)));
+    //connect(reply, SIGNAL(readyRead()), this, SLOT(readingReadyBytes()));
+    //connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(downloadFiles(QNetworkReply*)));
+
+    connect(m_mp3file, SIGNAL(finished()), this, SLOT(saveFile()));
+    //connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(saveFile()));
 
     ui->result->setText(
         QString("Downloading file... (") +
