@@ -5,11 +5,11 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QTreeWidget>
-#include <QXmlStreamReader>
 #include <QtNetwork>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
 #include <QList>
+#include <QDomDocument>
 
 #include <QDebug>
 
@@ -35,6 +35,7 @@ public slots :
 
 private:
     Ui::MainWindow *ui;
+    int nbrEpisodes;
 };
 
 #endif // MAINWINDOW_H

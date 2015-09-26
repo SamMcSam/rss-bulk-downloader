@@ -40,6 +40,8 @@ void MainWindow::reset()
     ui->rssEdit->setText("");
     ui->result->setText(tr("Enter the RSS feed URL in the text field"));
     ui->dirEdit->setText("C:/");
+
+    nbrEpisodes = 0;
 }
 
 /**
@@ -92,7 +94,7 @@ void MainWindow::download()
     QNetworkAccessManager *manager = new QNetworkAccessManager();
     QNetworkRequest request;
     request.setUrl(QUrl(rssURL));
-    QNetworkReply *reply = manager->get(request);
+    manager->get(request);
 
     connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(crawl(QNetworkReply*)));
 
@@ -105,12 +107,24 @@ void MainWindow::download()
  */
 void MainWindow::crawl(QNetworkReply *reply)
 {
-    /*
-     * channel
-     * - item
-     * -- enclosure url="..."
-    */
-    qDebug() << reply->readAll();
+    QDomDocument dom;
+    dom.setContent(reply->readAll());
+
+    //get items
+    QDomNodeList items = dom.elementsByTagName("item");
+    nbrEpisodes = items.size();
+
+    //get all mp3s urls
+    QDomNodeList enclosures = dom.elementsByTagName("enclosure");
+    QDomElement enclosure;
+    std::list<QString> mp3s;
+
+    for (int i=0; i<enclosures.size(); i++) {
+        enclosure = enclosures.item(i).toElement();
+        mp3s.push_front(enclosure.attribute("url"));
+        qDebug() << enclosure.attribute("url");
+    }
+    qDebug() << mp3s.size();
 
     ui->result->setText(tr("Data received! Start crawler..."));
 }
