@@ -42,6 +42,7 @@ void MainWindow::reset()
     nbrEpisodes = 0;
     nbrEpisodesDownloaded = 0;
     mp3s.clear();
+    m_mp3Names.clear();
 
     //m_mp3file->reset();
 }
@@ -145,6 +146,7 @@ void MainWindow::crawl(QNetworkReply *reply)
         for (int i=0; i<enclosures.size(); i++) {
             enclosure = enclosures.item(i).toElement();
             mp3s.append(enclosure.attribute("url"));
+            m_mp3Names.append(mp3s.last().split('/').last());
             qDebug() << enclosure.attribute("url");
         }
 
@@ -170,19 +172,29 @@ void MainWindow::crawl(QNetworkReply *reply)
  */
 void MainWindow::saveFile()
 {
-    //TEST FUCKING REDIRECTIONS!!!!!!!
-
+    qDebug() << "SAVING FILE...";
 
     if (m_mp3file->NoError == 0) {
-        qDebug() << "SAVING FILE...";
 
-        //treat name file
-        QString fileName = mp3s.front().split('/').last();
+        // redirection!
+        if (m_mp3file->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 302
+            || m_mp3file->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 301) {
+
+            qDebug() << ">> redirected!";
+            qDebug() << "--- old:" << mp3s.front();
+            mp3s.front() = m_mp3file->attribute(QNetworkRequest::RedirectionTargetAttribute).toString();
+            qDebug() << "--- new:" << mp3s.front();
+            downloadNext();
+            return;
+        }
+
+        //file name
+        QString fileName = m_mp3Names.at(nbrEpisodesDownloaded);
 
         qDebug() << fileName;
         qDebug() << (m_directory + fileName);
 
-        //do the download
+        //saving to disk
         QFile file(m_directory + fileName);
         if (file.open(QIODevice::WriteOnly)) {
             file.write(m_mp3file->readAll());
@@ -198,6 +210,7 @@ void MainWindow::saveFile()
 
     if (mp3s.size() > 0) {
         downloadNext();
+        return;
     }
     else {
         ui->result->setText(
@@ -211,7 +224,6 @@ void MainWindow::saveFile()
 
     m_mp3file->close();
     m_mp3file->deleteLater();
-    m_mp3file->reset();
 }
 
 /**
@@ -231,7 +243,6 @@ void MainWindow::downloadNext()
     //connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(downloadFiles(QNetworkReply*)));
 
     connect(m_mp3file, SIGNAL(finished()), this, SLOT(saveFile()));
-    //connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(saveFile()));
 
     ui->result->setText(
         QString("Downloading file... (") +

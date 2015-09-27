@@ -40,6 +40,7 @@ private:
     int nbrEpisodes;
     int nbrEpisodesDownloaded;
     QStringList mp3s;
+    QStringList m_mp3Names;
     QString m_directory;
     QNetworkReply *m_mp3file;
 };
